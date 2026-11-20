@@ -24,3 +24,6 @@ disableKinds = ["taxonomy", "term"]
     name = "Blogs"
     url = "blogs/"
     weight = 1
+
+  [params.comments]
+    repo = "Ipotrick/site"

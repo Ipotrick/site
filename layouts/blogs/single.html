@@ -9,6 +9,7 @@
 			</details>
 		</aside>
 		{{- end }}
+		<div class="post-col">
 		<article class="card post">
 			<header class="post-header">
 				<h1 class="post-heading">{{ .Title }}</h1>
@@ -18,7 +19,16 @@
 				{{ .Content }}
 			</div>
 		</article>
-	</div>
+		{{- /* Comments are GitHub issues via utterances: one issue per post, created by the utterances bot on the first comment.
+		       Turn off for one post with `comments: false` in its front matter. */ -}}
+		{{- $commentsOn := true }}{{ if isset .Params "comments" }}{{ $commentsOn = .Params.comments }}{{ end }}
+		{{- with site.Params.comments.repo }}{{ if $commentsOn }}
+		<section class="card comments">
+			<h2 class="comments-title">Comments</h2>
+			<script src="https://utteranc.es/client.js" repo="{{ . }}" issue-term="title" label="comments" theme="preferred-color-scheme" crossorigin="anonymous" async></script>
+		</section>
+		{{- end }}{{ end }}
+		</div>	</div>
 </main>
 <script>
 	(function () {

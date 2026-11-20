@@ -149,3 +149,7 @@ pre code { background: none; padding: 0; font-size: inherit; }
 .home-embed { float: right; width: 150px; max-width: 40%; aspect-ratio: 404 / 498; border: 0; border-radius: 6px; margin: 0.3rem 0 1rem 2rem; }
 .home-about::after { content: ""; display: block; clear: both; }
 @media (max-width: 600px) { .home-embed { float: none; display: block; width: 150px; max-width: none; margin: 0 auto 1.6rem; } }
+.post-col { min-width: 0; }
+.comments { margin-top: 1.6rem; }
+.comments-title { font-family: var(--sans); font-size: 2rem; margin: 0 0 1.6rem; }
+.comments .utterances { max-width: 100%; }
