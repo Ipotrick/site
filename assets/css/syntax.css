@@ -1,4 +1,4 @@
-/* Syntax highlighting, hand-mapped from Chroma's token classes to the Ayu palette
+﻿/* Syntax highlighting, hand-mapped from Chroma's token classes to the Ayu palette
    (Ayu Light in light mode, Ayu Dark in dark mode). Light values are darkened a little
    from stock Ayu Light where the original is too pale to read on white. */
 :root {
@@ -73,13 +73,3 @@
 .chroma .gi { color: var(--syn-string); }
 .chroma .ge { font-style: italic; }
 .chroma .gs, .chroma .gh, .chroma .gu { font-weight: 700; }
-
-/* manual semantic colours (see data/codecolors.toml): same palette as the diagrams */
-.chroma .cc { font-weight: 700; }
-.chroma .cc1 { color: color-mix(in srgb, var(--chart-categorical-1) 78%, var(--syn-fg)); }
-.chroma .cc2 { color: color-mix(in srgb, var(--chart-categorical-2) 78%, var(--syn-fg)); }
-.chroma .cc3 { color: color-mix(in srgb, var(--chart-categorical-3) 78%, var(--syn-fg)); }
-.chroma .cc4 { color: color-mix(in srgb, var(--chart-categorical-4) 78%, var(--syn-fg)); }
-.chroma .cc5 { color: color-mix(in srgb, var(--chart-categorical-5) 78%, var(--syn-fg)); }
-.chroma .cc6 { color: color-mix(in srgb, var(--chart-categorical-6) 78%, var(--syn-fg)); }
-.chroma .cc7 { color: color-mix(in srgb, var(--chart-categorical-7) 78%, var(--syn-fg)); }

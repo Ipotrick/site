@@ -1,9 +1,0 @@
-﻿{{- /* Default highlighting, plus optional manual colours: ```cpp {colors=example} colours every
-       identifier in data/codecolors.toml [example] with the diagram palette. */ -}}
-{{- $html := (transform.HighlightCodeBlock .).Wrapped -}}
-{{- with .Attributes.colors -}}
-  {{- range $name, $n := index hugo.Data.codecolors . -}}
-    {{- $html = $html | replaceRE (printf `<span class="[a-z0-9]+">%s</span>` $name) (printf `<span class="cc cc%v">%s</span>` $n $name) -}}
-  {{- end -}}
-{{- end -}}
-{{ $html | replaceRE `(<div class="highlight") colors="[^"]*"` "$1" | safeHTML }}

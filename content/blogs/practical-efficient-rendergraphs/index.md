@@ -79,7 +79,7 @@ A render graph API makes these two levels explicit. The **high level** is the gr
 
 An example:
 
-```cpp {colors=example}
+```cpp
 // high level
 GraphBufferId light_list = graph.add_buffer({ .size = light_list_size });
 graph.add_pass(Pass::Compute("Cull")
