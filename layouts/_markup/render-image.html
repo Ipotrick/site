@@ -1,0 +1,8 @@
+{{- /* SVGs in the page bundle are inlined so they use the shared palette in assets/css/diagram.css;
+       each file's own <style> block (a per-file copy of that palette) is dropped. Other images stay <img>. */ -}}
+{{- $src := .Destination -}}
+{{- with and (strings.HasSuffix $src ".svg") (.PageInner.Resources.Get $src) -}}
+<span class="diagram">{{ .Content | replaceRE `(?s)<style>.*?</style>` "" | safeHTML }}</span>
+{{- else -}}
+<img src="{{ $src | safeURL }}" alt="{{ .PlainText }}"{{ with .Title }} title="{{ . }}"{{ end }}>
+{{- end -}}

@@ -1,4 +1,4 @@
-# Ipotricks Pretty Pixels
+﻿# Ipotricks Pretty Pixels
 
 Graphics programming blog, built with [Hugo](https://gohugo.io/) and hosted on GitHub Pages.
 
@@ -23,10 +23,13 @@ Posts are grouped by year and month on the blog overview, and get a table of con
 
 ## Diagrams
 
-SVG diagrams should carry their own `prefers-color-scheme: dark` styles so they follow the site's light/dark mode.
-For SVGs that don't, `scripts/svg-darkmode.ps1 <images-dir>` adds a minimal dark block (text and lines only).
-PNG diagrams cannot adapt and are shown on a white card.
+Diagrams are SVGs in the post's `images/` folder, referenced like normal images: `![alt](images/01.svg)`.
+They are inlined into the page at build time (`layouts/_markup/render-image.html`), and the embedded `<style>`
+block in each file is dropped. The palette they use (`var(--chart-*)`, `var(--text-*)`, light and dark) is defined
+once in `assets/css/diagram.css`, with text and grid colours tied to the site's own tokens in `assets/css/site.css`.
+SVGs should use those variables instead of hard-coded colours.
 
+Code highlighting is a hand-written Ayu theme in `assets/css/syntax.css` (Ayu Light / Ayu Dark).
 ## Local preview
 
 Needs [Hugo Extended](https://gohugo.io/installation/) (the site is built with 0.170.1).

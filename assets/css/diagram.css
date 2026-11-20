@@ -1,0 +1,36 @@
+/* Single source of the diagram palette. The SVGs reference these variables
+   (var(--chart-*), var(--text-*)); their own embedded <style> blocks are stripped when the
+   page is built (layouts/_markup/render-image.html), so nothing is repeated per file.
+   Text and grid colors come from the site tokens in site.css, so diagrams match the page. */
+:root {
+	--text-primary: var(--text);
+	--text-secondary: var(--muted);
+	--chart-grid: var(--line);
+	--chart-axis: rgb(195, 194, 183);
+	--chart-categorical-1: rgb(42, 120, 214);
+	--chart-categorical-2: rgb(235, 104, 52);
+	--chart-categorical-3: rgb(27, 175, 122);
+	--chart-categorical-4: rgb(237, 161, 0);
+	--chart-categorical-5: rgb(232, 123, 164);
+	--chart-categorical-6: rgb(0, 131, 0);
+	--chart-categorical-7: rgb(98, 80, 214);
+	--chart-status-critical: rgb(208, 59, 59);
+	--chart-status-good: rgb(12, 163, 12);
+	--chart-status-warning: rgb(250, 178, 25);
+}
+
+@media (prefers-color-scheme: dark) {
+	:root {
+		--chart-axis: rgb(56, 56, 53);
+		--chart-categorical-1: rgb(57, 135, 229);
+		--chart-categorical-2: rgb(217, 89, 38);
+		--chart-categorical-3: rgb(25, 158, 112);
+		--chart-categorical-4: rgb(201, 133, 0);
+		--chart-categorical-5: rgb(213, 81, 129);
+		--chart-categorical-6: rgb(12, 163, 12);
+		--chart-categorical-7: rgb(144, 133, 233);
+	}
+}
+
+.diagram { display: block; margin: 2rem 0; }
+.diagram svg { display: block; max-width: 100%; height: auto; margin: 0 auto; font-family: var(--sans); }

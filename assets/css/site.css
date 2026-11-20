@@ -126,8 +126,6 @@ h1, h2, h3, h4, h5, h6 { font-weight: 700; line-height: 1.25; }
 .content table { border-collapse: collapse; width: 100%; margin-bottom: 1.6em; font-size: 1.5rem; }
 .content th, .content td { border: 1px solid var(--line); padding: 0.6rem 1rem; text-align: left; }
 .content img { display: block; max-width: 100%; height: auto; margin: 2rem auto; }
-/* PNG diagrams have an opaque white background and cannot recolor, so they sit on a card; SVGs adapt to the color scheme themselves. */
-.content img[src$=".png"] { padding: 1rem; background: #fff; border: 1px solid var(--line); }
 .content sup, .content .footnote-ref { font-size: 0.8em; }
 
 code, pre { font-family: var(--mono); }
