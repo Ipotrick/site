@@ -1,6 +1,7 @@
-{{ define "main" }}
+﻿{{ define "main" }}
 <main class="page">
 	<section class="card home">
+		{{ with site.Params.patrick }}<p class="home-greet"><a href="{{ . }}" rel="noopener">A happy Patrick Star</a></p>{{ end }}
 		<h1 class="home-title">{{ site.Title }}</h1>
 		<p class="home-tagline">{{ site.Params.tagline }}</p>
 		<nav class="home-links">
