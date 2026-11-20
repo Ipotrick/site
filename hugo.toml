@@ -1,6 +1,6 @@
-﻿baseURL = "https://USERNAME.github.io/"
+﻿baseURL = "https://ipotrick.github.io/"
 locale = "en-us"
-title = "My Blog"
+title = "Ipotrick's Blog"
 theme = "hermit"
 pagination.pagerSize = 10
 
@@ -15,5 +15,5 @@ pagination.pagerSize = 10
   showReadingTime = true
 
   [params.author]
-    name = "Your Name"
+    name = "Ipotrick"
     email = ""
