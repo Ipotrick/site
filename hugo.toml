@@ -1,0 +1,19 @@
+﻿baseURL = "https://USERNAME.github.io/"
+locale = "en-us"
+title = "My Blog"
+theme = "hermit"
+pagination.pagerSize = 10
+
+[markup.goldmark.renderer]
+  unsafe = true
+
+[params]
+  homeSubtitle = "Notes and write-ups"
+  dateform = "Jan 2, 2006"
+  dateformShort = "Jan 2"
+  dateformNum = "2006-01-02"
+  showReadingTime = true
+
+  [params.author]
+    name = "Your Name"
+    email = ""
