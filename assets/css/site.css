@@ -1,4 +1,4 @@
-﻿/* Palette and type follow WordPress "Twenty Fifteen": light grey page, white cards,
+/* Palette and type follow WordPress "Twenty Fifteen": light grey page, white cards,
    #333 text, Noto Serif body, Noto Sans titles, Inconsolata code. */
 :root {
 	--bg: #f1f1f1;
@@ -137,8 +137,6 @@ pre code { background: none; padding: 0; font-size: inherit; }
 /* plain pages (About): keep a comfortable reading width */
 .page > .post { max-width: 780px; margin: 0 auto; }
 
-.home-greet { font-family: var(--sans); font-size: 1.3rem; color: var(--muted); margin: 0 0 1.2rem; }
-.home-greet a { border-bottom: 1px solid var(--muted); }
 
 .home-about { margin: 0 0 2.4rem; }
 
@@ -148,3 +146,4 @@ pre code { background: none; padding: 0; font-size: inherit; }
 	body.is-post .site-header { position: sticky; top: 0; z-index: 10; }
 	.post-layout.has-toc .toc-col { top: 9rem; max-height: calc(100vh - 11rem); }
 }
+.home-embed { display: block; width: 100%; max-width: 240px; aspect-ratio: 404 / 498; border: 0; border-radius: 6px; margin: 0 0 1.6rem; }

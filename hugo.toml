@@ -14,7 +14,7 @@ disableKinds = ["taxonomy", "term"]
   tagline = "Graphics programming"
   bluesky = "ipotrick.bsky.social"
   github = "Ipotrick"
-  patrick = "https://tenor.com/view/spongebob-squarepants-patrick-star-patrick-nickelodeon-nicktoons-gif-16276482"
+  patrickEmbed = "16276482"
 
   [params.author]
     name = "Ipotrick"
