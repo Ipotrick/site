@@ -472,6 +472,8 @@ It also pays off in practice. In my research renderer Timberdoodle, with around 
 
 The notes below go into API design and a few practical details that are worth knowing when building one.
 
+I want to thank everyone who helped with the development of [Daxa](https://github.com/Ipotrick/Daxa), and especially Matej Sakmary, who is also a co-author of [Timberdoodle](https://github.com/Sunset-Flock/Timberdoodle). Matej helped develop Daxa's render graph, which this post is based on.
+
 ## Notes
 
 ### A question of API design
