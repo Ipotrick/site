@@ -1,23 +1,23 @@
 ﻿baseURL = "https://ipotrick.github.io/"
 locale = "en-us"
-title = "Ipotrick's Blog"
-theme = "hermit"
-pagination.pagerSize = 10
+title = "Ipotricks"
+disableKinds = ["taxonomy", "term"]
 
 [markup.goldmark.renderer]
   unsafe = true
 
+[markup.highlight]
+  noClasses = false
+  lineNumbersInTable = false
+
 [params]
-  homeSubtitle = "Notes and write-ups"
-  dateform = "Jan 2, 2006"
-  dateformShort = "Jan 2"
-  dateformNum = "2006-01-02"
-  showReadingTime = true
+  tagline = "Graphics programming"
   bluesky = "ipotrick.bsky.social"
+  github = "Ipotrick"
 
   [params.author]
     name = "Ipotrick"
-    email = ""
+
 [menu]
   [[menu.main]]
     name = "Blogs"
