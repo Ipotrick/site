@@ -30,6 +30,7 @@ once in `assets/css/diagram.css`, with text and grid colours tied to the site's 
 SVGs should use those variables instead of hard-coded colours.
 
 Code highlighting is a hand-written Ayu theme in `assets/css/syntax.css` (Ayu Light / Ayu Dark).
+
 ## Local preview
 
 Needs [Hugo Extended](https://gohugo.io/installation/) (the site is built with 0.170.1).
