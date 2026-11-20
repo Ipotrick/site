@@ -79,45 +79,45 @@ A render graph API makes these two levels explicit. The **high level** is the gr
 
 An example:
 
-```cpp
+```cpp {colors=example}
 // high level
-BufferId light_list = graph.add_buffer({ .size = light_list_size });
+GraphBufferId light_list = graph.add_buffer({ .size = light_list_size });
 graph.add_pass(Pass::Compute("Cull")
     .write(light_list)
     .executes(cull_lights));
 
-ImageId shadow_maps = graph.add_image({ .format = Format::D32_SFLOAT, .size = shadow_size, .layers = 4 });
+GraphImageId shadow_maps = graph.add_image({ .format = Format::D32_SFLOAT, .size = shadow_size, .layers = 4 });
 graph.add_pass(Pass::Raster("Shadow")
     .vertex_shader_read(light_list)
     .depth_attachment_write(shadow_maps)
     .executes(draw_shadows));
 
-ImageId froxels = graph.add_image({ .format = Format::R16G16B16A16_SFLOAT, .size = froxel_size });
+GraphImageId froxels = graph.add_image({ .format = Format::R16G16B16A16_SFLOAT, .size = froxel_size });
 graph.add_pass(Pass::Compute("Vol")
     .read(light_list)
     .read(shadow_maps)
     .write(froxels)
     .executes(integrate_volumetrics));
 
-ImageId gbuffer = graph.add_image({ .format = Format::R32G32B32A32_UINT, .size = size });
+GraphImageId gbuffer = graph.add_image({ .format = Format::R32G32B32A32_UINT, .size = size });
 graph.add_pass(Pass::Raster("GBuf")
     .color_attachment_write(gbuffer)
     .executes(draw_gbuffer));
 
-ImageId ao = graph.add_image({ .format = Format::R8_UNORM, .size = size });
+GraphImageId ao = graph.add_image({ .format = Format::R8_UNORM, .size = size });
 graph.add_pass(Pass::Compute("AO")
     .read(gbuffer)
     .write(ao)
     .executes(trace_ao));
 
-ImageId ao_denoised = graph.add_image({ .format = Format::R8_UNORM, .size = size });
+GraphImageId ao_denoised = graph.add_image({ .format = Format::R8_UNORM, .size = size });
 graph.add_pass(Pass::Compute("Denoise")
     .read(ao)
     .read(gbuffer)
     .write(ao_denoised)
     .executes(denoise_ao));
 
-ImageId hdr = graph.add_image({ .format = Format::R16G16B16A16_SFLOAT, .size = size });
+GraphImageId hdr = graph.add_image({ .format = Format::R16G16B16A16_SFLOAT, .size = size });
 graph.add_pass(Pass::Compute("Light")
     .read(gbuffer)
     .read(ao_denoised)
@@ -126,7 +126,7 @@ graph.add_pass(Pass::Compute("Light")
     .write(hdr)
     .executes(shade));
 
-ImageId final_color = graph.add_image({ .format = Format::R8G8B8A8_UNORM, .size = size });
+GraphImageId final_color = graph.add_image({ .format = Format::R8G8B8A8_UNORM, .size = size });
 graph.add_pass(Pass::Compute("Post")
     .read(hdr)
     .read(froxels)
@@ -488,13 +488,13 @@ For this, resources are just typed indices. They are values, not identifiers, so
 
 ```cpp
 struct GBuffer {
-    ImageId albedo;
-    ImageId normal;
-    ImageId depth;
+    GraphImageId albedo;
+    GraphImageId normal;
+    GraphImageId depth;
 };
 
 struct Lighting {
-    ImageId color;
+    GraphImageId color;
 };
 
 GBuffer add_gbuffer(Graph& graph, Extent size) {
@@ -522,9 +522,9 @@ Lighting add_lighting(Graph& graph, GBuffer const& gb, Extent size) {
     return l;
 }
 
-ImageId add_downsample_chain(Graph& graph, ImageId src, u32 count) {
+GraphImageId add_downsample_chain(Graph& graph, GraphImageId src, u32 count) {
     for (u32 i = 0; i < count; ++i) {
-        ImageId dst = graph.add_image({ .format = Format::R16G16B16A16_SFLOAT, .size = half_size(graph, src) });
+        GraphImageId dst = graph.add_image({ .format = Format::R16G16B16A16_SFLOAT, .size = half_size(graph, src) });
         graph.add_pass(Pass::Compute("Downsample")
             .read(src)
             .write(dst)
@@ -535,9 +535,9 @@ ImageId add_downsample_chain(Graph& graph, ImageId src, u32 count) {
 }
 
 // the frame is just function calls
-GBuffer  gbuffer  = add_gbuffer(graph, size);
-Lighting lighting = add_lighting(graph, gbuffer, size);
-ImageId  bloom    = add_downsample_chain(graph, lighting.color, 6);
+GBuffer      gbuffer  = add_gbuffer(graph, size);
+Lighting     lighting = add_lighting(graph, gbuffer, size);
+GraphImageId bloom    = add_downsample_chain(graph, lighting.color, 6);
 ```
 
 No string or global resource IDs, no in-between states. Each function only knows the resources it gets, and the graph figures out the rest.
