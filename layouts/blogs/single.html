@@ -1,4 +1,4 @@
-{{ define "head" }}
+﻿{{ define "head" }}
 	<style>
 		.post-toc { margin: 1.5rem 0; padding: 0.6rem 1rem; border: 1px solid rgba(128, 128, 128, 0.3); border-radius: 6px; font-size: 0.9rem; }
 		.post-toc summary { cursor: pointer; font-weight: 600; }
@@ -8,8 +8,12 @@
 		.post-toc nav a { text-decoration: none; opacity: 0.75; }
 		.post-toc nav a:hover, .post-toc nav a.active { opacity: 1; }
 		.post-toc nav a.active { font-weight: 600; }
+		.site-main { position: relative; }
 		@media (min-width: 1300px) {
-			.post-toc { position: fixed; top: 6rem; left: calc(50% - 630px); width: 250px; max-height: calc(100vh - 8rem); overflow-y: auto; margin: 0; border: none; padding: 0; }
+			.post-toc { position: absolute; top: 0; bottom: 0; right: 100%; width: 240px; margin: 0 2rem 0 0; padding: 0; border: none; border-radius: 0; }
+			.post-toc > summary { display: none; }
+			.post-toc > nav { position: sticky; top: 1.5rem; max-height: calc(100vh - 6rem); overflow-y: auto; }
+			.post-toc > nav > ul { margin-top: 0; }
 		}
 	</style>
 {{ end }}
