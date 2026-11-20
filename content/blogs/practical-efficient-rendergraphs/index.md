@@ -17,7 +17,7 @@ What is covered:
 - **Background.** How GPUs run work, why barriers exist, and why driver guessing and manual barriers don't scale. Skip it if you know barriers.
 - **Core.** Two level command recording, resource timelines and barrier generation.
 - **Optimizations.** From access groups, batching, reordering and memory aliasing up to the advanced ones, split barriers and async compute.
-- **Conclusion and notes.** Numbers from Timberdoodle, API design, what to track, subresources, image layouts and some conveniences.
+- **Conclusion and notes.** Numbers from Timberdoodle, API design, what to track, subresources, image layouts and automatic bindings.
 
 The most important parts are the core and the optimizations up to and including memory aliasing. The rest is also very useful, but not needed for a good render graph.
 
@@ -478,6 +478,8 @@ The notes below go into API design and a few practical details that are worth kn
 
 Everything above comes from treating a render graph as a high level description of the frame: which passes run, which resources they use, and how. The graph itself only exists implicitly in the resource timelines.
 
+The render graph in [Daxa](https://github.com/Ipotrick/Daxa) is the one described in this post, and the API of the examples here is also similar to Daxa's.
+
 Many render graph APIs work differently and version resources. Each write creates a new version of the resource, and later passes have to refer to the right version, so every in-between state has to be declared and named. Frostbite's FrameGraph³, which many later render graphs build on, works like this:
 
 ![dependencies from recording order vs named resource versions](images/33.svg)
@@ -607,13 +609,13 @@ We can go further. The only layouts that really matter are UNDEFINED, GENERAL an
 
 So my second recommendation is to **just use the general layout if you can, and don't track the others.** In D3D12, the COMMON layout of enhanced barriers is the equivalent. This is one of the places where Vulkan and D3D12 focused very hard on GCN and older GPUs, and it is basically an artifact of that time that no longer matters.
 
-### Graph conveniences
+### Bindings from attachments
 
 Because the graph already knows every attachment of every pass, it can also take work off your hands. With a little more information in the attachments, the graph can generate descriptors for a pass, or automatically fill a buffer or push or root constants with the bindless indices of its resources. So you write even less code per pass.
 
 This is also good for performance. The graph knows all of this before execution, so it can pre-allocate the memory for these buffers, or pre-create the descriptors and cache them, instead of building them again every frame.
 
-For this the graph needs one more piece of information per attachment: where the shader expects the resource. There are two ways to tell it, and I will go from the simplest to the one I prefer.
+For this the graph needs one more piece of information per attachment: where the shader expects the resource. The simplest way is to tell it the binding slots, and there is a more automatic way I like, which I mention at the end.
 
 **Shared binding indices.** The simplest way, and a good start, is to give every attachment a binding index that C++ and the shader agree on. A small shared header holds the indices, the pass declaration passes them along with each attachment, and the shader uses the same indices to look the resources up:
 
@@ -649,91 +651,7 @@ RWTexture2D<float4> hdr  = get_image(push.resources[LightBinding::HDR]);
 
 Before the callback of a pass runs, the graph writes the real resource id of every attachment into the slot named in its declaration, into push constants or a buffer. Pass and shader agree on the slots only through the shared header. This needs no tooling and works with any shader language. The price is that the indices are maintained by hand, and nothing checks that the shader's array and the pass's attachments really match.
 
-**Static reflection with macros.** What I prefer is to declare a pass once, in a file shared by C++ and the shader, with macros that expand differently in each language. [Daxa](https://github.com/Ipotrick/Daxa) does it this way with its task heads. The declaration lists the attachments and how each one is accessed. In the shader it becomes a struct with one field per attachment, holding the resource ids or buffer pointers. In C++ it becomes a struct of metadata about the pass and its attachments, which the graph reads for barriers and for filling that shader struct. The declaration is the API of the pass's shader, in C++ and in the shader at once. This is what such a shared declaration looks like, written after Daxa:
-
-```cpp
-// light_head.inl, included from C++ and from shaders
-#include <daxa/daxa.inl>
-#include <daxa/utils/task_graph.inl>
-
-DAXA_DECL_COMPUTE_TASK_HEAD_BEGIN(LightHead)
-DAXA_TH_IMAGE_ID(CS::READ,   REGULAR_2D, gbuffer)
-DAXA_TH_IMAGE_ID(CS::READ,   REGULAR_2D, ao_denoised)
-DAXA_TH_BUFFER_PTR(CS::READ, daxa_BufferPtr(Light), light_list)
-DAXA_TH_IMAGE_ID(CS::READ,   REGULAR_2D, shadow_maps)
-DAXA_TH_IMAGE_ID(CS::WRITE,  REGULAR_2D, hdr)
-DAXA_DECL_TASK_HEAD_END
-
-struct LightPush {
-    DAXA_TH_BLOB(LightHead, attachments)
-    daxa_u32vec2 size;
-};
-```
-
-Compiled for the shader (Slang), the macros leave only the data the shader needs. The access and view type are gone, as only the graph cares about them. What remains is a struct with one typed field per attachment, embedded in the push constants through the blob field:
-
-```hlsl
-namespace LightHead {
-    struct AttachmentShaderBlob {
-        daxa::ImageViewId gbuffer;
-        daxa::ImageViewId ao_denoised;
-        daxa_BufferPtr(Light) light_list;
-        daxa::ImageViewId shadow_maps;
-        daxa::ImageViewId hdr;
-    };
-};
-
-struct LightPush {
-    LightHead::AttachmentShaderBlob attachments;
-    daxa_u32vec2 size;
-};
-
-// in the shader: push.attachments.gbuffer, push.attachments.hdr, ...
-```
-
-Compiled for C++, the same lines become compile time metadata. Each attachment keeps its name, access, view type and how the shader sees it. On top of that come a named index per attachment and a blob type with the same size and layout as the shader struct. This is a simplified version of what the macros generate:
-
-```cpp
-namespace LightHead {
-    struct Info {
-        static constexpr daxa::TaskType TYPE = daxa::TaskType::COMPUTE;
-        static constexpr char const * NAME = "LightHead";
-        static constexpr auto ATTACHMENT_COUNT = 5;
-
-        // one entry per DAXA_TH_* line
-        static constexpr std::array<daxa::TaskAttachmentInfo, 5> ATTACHMENTS = {{
-            { .name = "gbuffer",     .task_access = CS::READ,  .view_type = REGULAR_2D },
-            { .name = "ao_denoised", .task_access = CS::READ,  .view_type = REGULAR_2D },
-            { .name = "light_list",  .task_access = CS::READ,  /* buffer, passed as pointer */ },
-            { .name = "shadow_maps", .task_access = CS::READ,  .view_type = REGULAR_2D },
-            { .name = "hdr",         .task_access = CS::WRITE, .view_type = REGULAR_2D },
-        }};
-        static constexpr auto AT = ATTACHMENTS;  // AT.gbuffer, AT.hdr, ... name the attachment indices
-
-        // raw bytes, laid out like the shader struct above
-        struct AttachmentShaderBlob { std::array<std::byte, /* size from ATTACHMENTS */ 64> value; };
-    };
-}
-
-struct LightPush {
-    LightHead::AttachmentShaderBlob attachments;
-    daxa_u32vec2 size;
-};
-```
-
-Recording the pass then only maps the graph resources to the head's attachments. The blob is not filled by hand: the graph fills it from the metadata when the graph is completed, so executing it only copies the finished blob into the push constants:
-
-```cpp
-graph.add_task(daxa::HeadTask<LightHead::Info>("Light")
-    .head_views({ .gbuffer = gbuffer, .ao_denoised = ao_denoised, .light_list = light_list,
-                  .shadow_maps = shadow_maps, .hdr = hdr })
-    .executes([=](daxa::TaskInterface ti) {
-        ti.recorder.push_constant(LightPush{ .attachments = ti.attachment_shader_blob, .size = size });
-        // bind pipeline, dispatch
-    }));
-```
-
-The attachments are now declared in exactly one place. The graph gets its access information for barriers from it, and the shader gets a typed struct. Adding, removing or changing an attachment is a one line edit, and a shader that reads a field that does not exist no longer compiles. The cost is the macro and reflection machinery, and that every shader language you use needs the macro header. I find it worth it for any renderer with more than a handful of passes. But to be clear, the simplest way for sure is the shared binding indices from before, and that is where I would start.
+**Static reflection with macros.** For bigger renderers I prefer to go one step further and declare each pass once, in a file shared by C++ and the shader, with macros that expand differently in each language. [Daxa](https://github.com/Ipotrick/Daxa) does this with its task heads. The declaration lists the attachments and how each one is accessed. In the shader it compiles to a struct of resource ids and buffer pointers, and in C++ to a struct of metadata about the pass and its attachments, which the graph uses to fill the shader struct for you. That makes the declaration the API of the pass's shader, in C++ and in the shader at once, and that is what I like about it. But the simplest way, for sure, is the shared binding indices from above.
 
 ## References
 
