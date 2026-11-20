@@ -141,3 +141,10 @@ pre code { background: none; padding: 0; font-size: inherit; }
 .home-greet a { border-bottom: 1px solid var(--muted); }
 
 .home-about { margin: 0 0 2.4rem; }
+
+/* Desktop only: on blog posts the header stays pinned while scrolling. */
+@media (min-width: 1100px) {
+	html { scroll-padding-top: 9rem; }
+	body.is-post .site-header { position: sticky; top: 0; z-index: 10; }
+	.post-layout.has-toc .toc-col { top: 9rem; max-height: calc(100vh - 11rem); }
+}
