@@ -1,0 +1,31 @@
+﻿{{ define "header" }}
+{{ partialCached "header.html" . }}
+{{ end }}
+
+{{ define "main" }}
+	<main class="site-main section-inner thin animated fadeIn faster">
+		<h1>{{ .Title }}</h1>
+		{{- range .Pages.GroupByDate "2006" "desc" }}
+		<div class="posts-group">
+			<div class="post-year" id="{{ .Key }}">{{ .Key }}</div>
+			{{- range (.Pages.GroupByDate "January" "desc") }}
+			<div class="post-month" style="margin: 1rem 0 0.25rem; font-weight: 600; opacity: 0.7;">{{ .Key }}</div>
+			<ul class="posts-list">
+				{{- range .Pages }}
+				<li class="post-item">
+					<a href="{{ .Permalink }}">
+						<span class="post-title">{{ .Title }}</span>
+						<span class="post-day">{{ .Date.Format site.Params.dateformShort }}</span>
+					</a>
+				</li>
+				{{- end }}
+			</ul>
+			{{- end }}
+		</div>
+		{{- end }}
+	</main>
+{{ end }}
+
+{{ define "footer" }}
+{{ partialCached "footer.html" . }}
+{{ end }}

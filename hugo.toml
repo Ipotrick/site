@@ -18,3 +18,7 @@ pagination.pagerSize = 10
   [params.author]
     name = "Ipotrick"
     email = ""
+[menu]
+  [[menu.main]]
+    name = "Blogs"
+    url = "blogs/"
