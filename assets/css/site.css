@@ -146,4 +146,4 @@ pre code { background: none; padding: 0; font-size: inherit; }
 	body.is-post .site-header { position: sticky; top: 0; z-index: 10; }
 	.post-layout.has-toc .toc-col { top: 9rem; max-height: calc(100vh - 11rem); }
 }
-.home-embed { display: block; width: 100%; max-width: 240px; aspect-ratio: 404 / 498; border: 0; border-radius: 6px; margin: 0 0 1.6rem; }
+.home-embed { display: block; width: 100%; max-width: 240px; aspect-ratio: 404 / 498; border: 0; border-radius: 6px; margin: 0 auto 1.6rem; }
