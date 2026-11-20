@@ -1,4 +1,4 @@
-﻿# Ipotricks Pretty Pixels
+# Patrick's Pretty Pixels
 
 Graphics programming blog, built with [Hugo](https://gohugo.io/) and hosted on GitHub Pages.
 
