@@ -1,4 +1,4 @@
-/* Palette and type follow WordPress "Twenty Fifteen": light grey page, white cards,
+﻿/* Palette and type follow WordPress "Twenty Fifteen": light grey page, white cards,
    #333 text, Noto Serif body, Noto Sans titles, Inconsolata code. */
 :root {
 	--bg: #f1f1f1;
@@ -123,7 +123,9 @@ h1, h2, h3, h4, h5, h6 { font-weight: 700; line-height: 1.25; }
 .content hr { border: 0; border-top: 1px solid var(--line); margin: 2.4rem 0; }
 .content table { border-collapse: collapse; width: 100%; margin-bottom: 1.6em; font-size: 1.5rem; }
 .content th, .content td { border: 1px solid var(--line); padding: 0.6rem 1rem; text-align: left; }
-.content img { display: block; max-width: 100%; height: auto; margin: 2rem auto; padding: 1rem; background: #fff; border: 1px solid var(--line); }
+.content img { display: block; max-width: 100%; height: auto; margin: 2rem auto; }
+/* PNG diagrams have an opaque white background and cannot recolor, so they sit on a card; SVGs adapt to the color scheme themselves. */
+.content img[src$=".png"] { padding: 1rem; background: #fff; border: 1px solid var(--line); }
 .content sup, .content .footnote-ref { font-size: 0.8em; }
 
 code, pre { font-family: var(--mono); }
