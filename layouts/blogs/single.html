@@ -1,0 +1,59 @@
+{{ define "head" }}
+	<style>
+		.post-toc { margin: 1.5rem 0; padding: 0.6rem 1rem; border: 1px solid rgba(128, 128, 128, 0.3); border-radius: 6px; font-size: 0.9rem; }
+		.post-toc summary { cursor: pointer; font-weight: 600; }
+		.post-toc nav ul { list-style: none; margin: 0.4rem 0 0; padding-left: 0; }
+		.post-toc nav ul ul { padding-left: 1rem; margin-top: 0.2rem; }
+		.post-toc nav li { margin: 0.2rem 0; line-height: 1.35; }
+		.post-toc nav a { text-decoration: none; opacity: 0.75; }
+		.post-toc nav a:hover, .post-toc nav a.active { opacity: 1; }
+		.post-toc nav a.active { font-weight: 600; }
+		@media (min-width: 1300px) {
+			.post-toc { position: fixed; top: 6rem; left: calc(50% - 630px); width: 250px; max-height: calc(100vh - 8rem); overflow-y: auto; margin: 0; border: none; padding: 0; }
+		}
+	</style>
+{{ end }}
+
+{{ define "header" }}
+{{ partial "header.html" . }}
+{{ end }}
+
+{{ define "main" }}
+	<main class="site-main section-inner thin animated fadeIn faster">
+		<h1>{{ .Title }}</h1>
+		{{- if .Fragments.Headings }}
+		<details class="post-toc" open>
+			<summary>Contents</summary>
+			{{ .TableOfContents }}
+		</details>
+		{{- end }}
+		<div class="content">
+			{{ .Content | replaceRE "(<h[1-6] id=\"([^\"]+)\".+)(</h[1-6]+>)" `${1}<a href="#${2}" class="anchor" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 7h3a5 5 0 0 1 5 5 5 5 0 0 1-5 5h-3m-6 0H6a5 5 0 0 1-5-5 5 5 0 0 1 5-5h3"></path><line x1="8" y1="12" x2="16" y2="12"></line></svg></a>${3}` | safeHTML }}
+		</div>
+	</main>
+	<script>
+		(function () {
+			var toc = document.querySelector('.post-toc');
+			if (!toc) return;
+			if (!window.matchMedia('(min-width: 1300px)').matches) toc.removeAttribute('open');
+			var links = {};
+			toc.querySelectorAll('nav a[href^="#"]').forEach(function (a) { links[decodeURIComponent(a.getAttribute('href').slice(1))] = a; });
+			var headings = Array.prototype.filter.call(document.querySelectorAll('.content h2[id], .content h3[id]'), function (h) { return links[h.id]; });
+			if (!('IntersectionObserver' in window) || !headings.length) return;
+			var current = null;
+			var observer = new IntersectionObserver(function (entries) {
+				entries.forEach(function (e) {
+					if (!e.isIntersecting) return;
+					if (current) current.classList.remove('active');
+					current = links[e.target.id];
+					current.classList.add('active');
+				});
+			}, { rootMargin: '0px 0px -75% 0px' });
+			headings.forEach(function (h) { observer.observe(h); });
+		})();
+	</script>
+{{ end }}
+
+{{ define "footer" }}
+{{ partialCached "footer.html" . }}
+{{ end }}
