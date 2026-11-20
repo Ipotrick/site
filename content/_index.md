@@ -2,7 +2,7 @@
 title: "Home"
 ---
 
-I'm a graphics programmer. I've worked on graphics professionally for over four years at Activision Infinity Ward, and spent many more years on it in my free time before that. Honestly, it's a passion bordering on addiction.
+I'm a graphics programmer. I've worked on graphics professionally for years, and spent many more years on it in my free time before that. Honestly, it's a passion bordering on addiction.
 
 I got into graphics through blog posts and talks from GDC, SIGGRAPH and other conferences. All of my excitement for it came from people who took the time to share what they had learned.
 
