@@ -1,5 +1,5 @@
 ---
-title: "About"
+title: "Home"
 ---
 
 I'm a graphics programmer. I've worked on graphics professionally for over four years at Activision Infinity Ward, and spent many more years on it in my free time before that. Honestly, it's a passion bordering on addiction.

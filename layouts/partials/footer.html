@@ -1,7 +1,6 @@
 ﻿<footer class="site-footer">
 	<div class="site-footer-inner">
 		<span>&copy; {{ now.Format "2006" }} {{ site.Params.author.name }}</span>
-		<a href="{{ "about/" | relURL }}">About</a>
 		{{ with site.Params.bluesky }}<a href="https://bsky.app/profile/{{ . }}" rel="noopener">Bluesky</a>{{ end }}
 		{{ with site.Params.github }}<a href="https://github.com/{{ . }}" rel="noopener">GitHub</a>{{ end }}
 		{{ with site.GetPage "/blogs" }}{{ with .OutputFormats.Get "rss" }}<a href="{{ .Permalink }}">RSS</a>{{ end }}{{ end }}

@@ -14,7 +14,7 @@ disableKinds = ["taxonomy", "term"]
   tagline = "Graphics programming"
   bluesky = "ipotrick.bsky.social"
   github = "Ipotrick"
-  patrick = "https://tenor.com/sr/search/patrick-smiling-gifs"
+  patrick = "https://tenor.com/view/spongebob-squarepants-patrick-star-patrick-nickelodeon-nicktoons-gif-16276482"
 
   [params.author]
     name = "Ipotrick"
@@ -24,7 +24,3 @@ disableKinds = ["taxonomy", "term"]
     name = "Blogs"
     url = "blogs/"
     weight = 1
-  [[menu.main]]
-    name = "About"
-    url = "about/"
-    weight = 2

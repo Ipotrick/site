@@ -11,6 +11,7 @@
 			{{ with site.Params.bluesky }}<a href="https://bsky.app/profile/{{ . }}" rel="noopener">Bluesky</a>{{ end }}
 			{{ with site.Params.github }}<a href="https://github.com/{{ . }}" rel="noopener">GitHub</a>{{ end }}
 		</nav>
+		<div class="content home-about">{{ .Content }}</div>
 		{{ with site.GetPage "/blogs" }}
 		{{ with .Pages.ByDate.Reverse | first 5 }}
 		<h2 class="section-label">Latest</h2>
