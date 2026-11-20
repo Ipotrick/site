@@ -1,6 +1,6 @@
 ﻿baseURL = "https://ipotrick.github.io/"
 locale = "en-us"
-title = "Ipotricks"
+title = "Ipotricks Pretty Pixels"
 disableKinds = ["taxonomy", "term"]
 
 [markup.goldmark.renderer]
