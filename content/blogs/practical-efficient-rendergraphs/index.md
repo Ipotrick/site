@@ -29,7 +29,7 @@ GPUs work in passes. Each pass is a set of parallel work, like a draw, a render 
 
 The GPU may also run the threads of different passes at the same time, and once started, not necessarily in order. This is good, because overlapping passes fill more of the GPU's hardware and threads. Generally we want as much work as possible queued up on the GPU, so it never drains or runs only partially filled.
 
-![two independent passes, overlapped vs one after another](images/01.png)
+![two independent passes, overlapped vs one after another](images/01.svg)
 
 ### Barriers
 
@@ -37,21 +37,21 @@ There is one issue with this: passes often depend on each other, and then the ov
 
 A barrier solves both issues of this read after write example. Pass 2 waits until pass 1 is finished, and pass 1's writes are flushed and made visible before pass 2 reads them. For other hazards like write after read, or depending on the kind of access, the memory operation a barrier does is different. For this post that doesn't matter, it's just important to know that barriers do both: they wait, and they take care of memory.
 
-![GPU timeline: hazard without a barrier, fixed with one](images/02.png)
+![GPU timeline: hazard without a barrier, fixed with one](images/02.svg)
 
 But barriers have a cost. At every barrier the GPU drains, and utilization, how many threads are actually running, drops. Afterwards it has to fill up again. More barriers means more draining:
 
-![GPU utilization draining and filling at barriers](images/03.png)
+![GPU utilization draining and filling at barriers](images/03.svg)
 
 ### The issues with guessing
 
 D3D11 places barriers for you. The driver infers how each pass accesses resources from its shader bindings and render pass attachments, and puts a barrier wherever it sees a possible dependency. A render pass drawing into an image and a compute pass reading it get a barrier in between, without you ever recording one:
 
-![render pass, barrier, compute pass](images/04.png)
+![render pass, barrier, compute pass](images/04.svg)
 
 Inferring only works by being pessimistic: whenever a pass might touch something an earlier pass wrote, the driver puts a barrier. Take two passes that write the same buffer. We know this is safe, because they write different sections, or because they append with atomics, like a global debug buffer that any shader writes to. The driver only sees two writes to the same resource and serializes them with a barrier in between. D3D11 does this for all writes to UAVs, which is why vendors even ship extensions to turn it off.¹ ²
 
-![two safe writes to the same buffer, serialized by the driver vs overlapped](images/05.png)
+![two safe writes to the same buffer, serialized by the driver vs overlapped](images/05.svg)
 
 With bindless resource access, inferring is impossible. A shader can access any resource at any time, and there are no bindings to look at.
 
@@ -150,7 +150,7 @@ On the high level, each pass declares the resources it uses and how, like `color
 
 With this, the graph sees the whole frame before any real command is recorded:
 
-![two level command recording of the example frame](images/06.png)
+![two level command recording of the example frame](images/06.svg)
 
 ### Resource timelines form the graph
 
@@ -162,17 +162,17 @@ From this we build a **resource timeline** for every resource: the list of passe
 
 Resource timelines are the core of this render graph design. Everything that follows, barriers, batching, reordering and aliasing, is built on them.
 
-![resource timelines of the example](images/07.png)
+![resource timelines of the example](images/07.svg)
 
 The recording order is the logical order of the frame, and it never changes. But the graph may reorder passes whose resource accesses don't conflict, like the two chains GBuf → AO → Denoise and Cull → Shadow → Vol in the example, which work on fully disjoint resources. That's why the graph must know about every resource that affects the correctness of reads and writes.
 
 To reorder passes, the graph needs the logical dependencies between passes, and the timelines already dedcribe them: a write depends on the access right before it, a read on the last write. Reads don't depend on each other, so a read skips the other reads in between. To find what a pass depends on, we do this on the timeline of each of its attachments. In the example, Light reads four resources:
 
-![Light steps back on four timelines to find Cull, Shadow, GBuf and Denoise](images/08.png)
+![Light steps back on four timelines to find Cull, Shadow, GBuf and Denoise](images/08.svg)
 
 This finds Cull, Shadow, GBuf and Denoise. Doing this for every pass gives the full pass graph, here drawn without the edges that are already implied through other passes:
 
-![the pass graph the timelines imply](images/09.png)
+![the pass graph the timelines imply](images/09.svg)
 
 This is different from most other render graphs, which build an explicit pass graph³ ⁴ ⁵. Here it is not required, because the timelines effectively already form one, and all algorithms work directly on them.
 
