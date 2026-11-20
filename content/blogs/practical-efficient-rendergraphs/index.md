@@ -398,6 +398,8 @@ Each batch then gets two waits. The first wait, at the start of the batch, cover
 
 ![one wait per batch vs a far wait and a near wait per batch](images/30.svg)
 
+![GPU occupancy with one barrier per batch vs split barriers, with each pass's share of the GPU](images/34.svg)
+
 There is a catch. With the scheduling described so far, ignoring the aliasing wiggle, far passes never exist. Every pass is scheduled as early as possible, so it always lands in the batch right after its latest dependency, which makes every pass a near pass. The example above already assumes the step that fixes this.
 
 Like for aliasing, we can wiggle passes that are not on the critical path further back in the frame, without lengthening the critical path. This plants far passes into batches that would otherwise only have near passes, and gives the near wait something to hide behind.
@@ -553,9 +555,11 @@ graph.add_pass(Pass::Compute("Light")
     .read(gbuffer.normal)
     .write(lighting.color)
     .executes([=](PassInterface pi) {
-        auto normal = pi.view(gbuffer.normal);
-        auto color  = pi.view(lighting.color);
-        auto size   = pi.info(lighting.color).size;
+        // pi resolves the virtual resource ids from graph recording (GraphImageId)
+        // to the real resources behind them
+        ImageViewId normal = pi.view(gbuffer.normal);
+        ImageViewId color  = pi.view(lighting.color);
+        Extent      size   = pi.info(lighting.color).size;
         // bind, push constants, dispatch
     }));
 ```
@@ -609,6 +613,128 @@ Because the graph already knows every attachment of every pass, it can also take
 
 This is also good for performance. The graph knows all of this before execution, so it can pre-allocate the memory for these buffers, or pre-create the descriptors and cache them, instead of building them again every frame.
 
+For this the graph needs one more piece of information per attachment: where the shader expects the resource. There are two ways to tell it, and I will go from the simplest to the one I prefer.
+
+**Shared binding indices.** The simplest way, and a good start, is to give every attachment a binding index that C++ and the shader agree on. A small shared header holds the indices, the pass declaration passes them along with each attachment, and the shader uses the same indices to look the resources up:
+
+```cpp
+// shared between C++ and the shader
+namespace LightBinding {
+    static const u32 GBUFFER      = 0;
+    static const u32 AO_DENOISED  = 1;
+    static const u32 LIGHT_LIST   = 2;
+    static const u32 SHADOW_MAPS  = 3;
+    static const u32 HDR          = 4;
+}
+
+// C++: the binding index travels with the attachment
+graph.add_pass(Pass::Compute("Light")
+    .read(gbuffer,     LightBinding::GBUFFER)
+    .read(ao_denoised, LightBinding::AO_DENOISED)
+    .read(light_list,  LightBinding::LIGHT_LIST)
+    .read(shadow_maps, LightBinding::SHADOW_MAPS)
+    .write(hdr,        LightBinding::HDR)
+    .executes(shade));
+```
+
+```hlsl
+// shader: the graph filled this array, the index is the binding slot
+struct LightPush { ResourceId resources[5]; };
+[[vk::push_constant]] LightPush push;
+
+// ...
+Texture2D<uint4> gbuffer = get_image(push.resources[LightBinding::GBUFFER]);
+RWTexture2D<float4> hdr  = get_image(push.resources[LightBinding::HDR]);
+```
+
+Before the callback of a pass runs, the graph writes the real resource id of every attachment into the slot named in its declaration, into push constants or a buffer. Pass and shader agree on the slots only through the shared header. This needs no tooling and works with any shader language. The price is that the indices are maintained by hand, and nothing checks that the shader's array and the pass's attachments really match.
+
+**Static reflection with macros.** What I prefer is to declare a pass once, in a file shared by C++ and the shader, with macros that expand differently in each language. [Daxa](https://github.com/Ipotrick/Daxa) does it this way with its task heads. The declaration lists the attachments and how each one is accessed. In the shader it becomes a struct with one field per attachment, holding the resource ids or buffer pointers. In C++ it becomes a struct of metadata about the pass and its attachments, which the graph reads for barriers and for filling that shader struct. The declaration is the API of the pass's shader, in C++ and in the shader at once. This is what such a shared declaration looks like, written after Daxa:
+
+```cpp
+// light_head.inl, included from C++ and from shaders
+#include <daxa/daxa.inl>
+#include <daxa/utils/task_graph.inl>
+
+DAXA_DECL_COMPUTE_TASK_HEAD_BEGIN(LightHead)
+DAXA_TH_IMAGE_ID(CS::READ,   REGULAR_2D, gbuffer)
+DAXA_TH_IMAGE_ID(CS::READ,   REGULAR_2D, ao_denoised)
+DAXA_TH_BUFFER_PTR(CS::READ, daxa_BufferPtr(Light), light_list)
+DAXA_TH_IMAGE_ID(CS::READ,   REGULAR_2D, shadow_maps)
+DAXA_TH_IMAGE_ID(CS::WRITE,  REGULAR_2D, hdr)
+DAXA_DECL_TASK_HEAD_END
+
+struct LightPush {
+    DAXA_TH_BLOB(LightHead, attachments)
+    daxa_u32vec2 size;
+};
+```
+
+Compiled for the shader (Slang), the macros leave only the data the shader needs. The access and view type are gone, as only the graph cares about them. What remains is a struct with one typed field per attachment, embedded in the push constants through the blob field:
+
+```hlsl
+namespace LightHead {
+    struct AttachmentShaderBlob {
+        daxa::ImageViewId gbuffer;
+        daxa::ImageViewId ao_denoised;
+        daxa_BufferPtr(Light) light_list;
+        daxa::ImageViewId shadow_maps;
+        daxa::ImageViewId hdr;
+    };
+};
+
+struct LightPush {
+    LightHead::AttachmentShaderBlob attachments;
+    daxa_u32vec2 size;
+};
+
+// in the shader: push.attachments.gbuffer, push.attachments.hdr, ...
+```
+
+Compiled for C++, the same lines become compile time metadata. Each attachment keeps its name, access, view type and how the shader sees it. On top of that come a named index per attachment and a blob type with the same size and layout as the shader struct. This is a simplified version of what the macros generate:
+
+```cpp
+namespace LightHead {
+    struct Info {
+        static constexpr daxa::TaskType TYPE = daxa::TaskType::COMPUTE;
+        static constexpr char const * NAME = "LightHead";
+        static constexpr auto ATTACHMENT_COUNT = 5;
+
+        // one entry per DAXA_TH_* line
+        static constexpr std::array<daxa::TaskAttachmentInfo, 5> ATTACHMENTS = {{
+            { .name = "gbuffer",     .task_access = CS::READ,  .view_type = REGULAR_2D },
+            { .name = "ao_denoised", .task_access = CS::READ,  .view_type = REGULAR_2D },
+            { .name = "light_list",  .task_access = CS::READ,  /* buffer, passed as pointer */ },
+            { .name = "shadow_maps", .task_access = CS::READ,  .view_type = REGULAR_2D },
+            { .name = "hdr",         .task_access = CS::WRITE, .view_type = REGULAR_2D },
+        }};
+        static constexpr auto AT = ATTACHMENTS;  // AT.gbuffer, AT.hdr, ... name the attachment indices
+
+        // raw bytes, laid out like the shader struct above
+        struct AttachmentShaderBlob { std::array<std::byte, /* size from ATTACHMENTS */ 64> value; };
+    };
+}
+
+struct LightPush {
+    LightHead::AttachmentShaderBlob attachments;
+    daxa_u32vec2 size;
+};
+```
+
+Recording the pass then only maps the graph resources to the head's attachments. The blob is not filled by hand: the graph fills it from the metadata when the graph is completed, so executing it only copies the finished blob into the push constants:
+
+```cpp
+graph.add_task(daxa::HeadTask<LightHead::Info>("Light")
+    .head_views({ .gbuffer = gbuffer, .ao_denoised = ao_denoised, .light_list = light_list,
+                  .shadow_maps = shadow_maps, .hdr = hdr })
+    .executes([=](daxa::TaskInterface ti) {
+        ti.recorder.push_constant(LightPush{ .attachments = ti.attachment_shader_blob, .size = size });
+        // bind pipeline, dispatch
+    }));
+```
+
+The attachments are now declared in exactly one place. The graph gets its access information for barriers from it, and the shader gets a typed struct. Adding, removing or changing an attachment is a one line edit, and a shader that reads a field that does not exist no longer compiles. The cost is the macro and reflection machinery, and that every shader language you use needs the macro header. I find it worth it for any renderer with more than a handful of passes. But to be clear, the simplest way for sure is the shared binding indices from before, and that is where I would start.
+
 ## References
 
 1. Intel, [UAV overlap sample](https://github.com/GameTechDev/UAVOverlapSample)
@@ -618,3 +744,4 @@ This is also good for performance. The graph knows all of this before execution,
 5. Pavlo Muratov, [Organizing GPU Work with Directed Acyclic Graphs](https://levelup.gitconnected.com/organizing-gpu-work-with-directed-acyclic-graphs-f3fd5f2c2af3)
 6. Charlie Birtwistle and Francois Durand, [Task Graph Renderer at Activision](https://enginearchitecture.realtimerendering.com/downloads/reac2023_task_graph_renderer.pdf), REAC 2023
 7. Zhuo Chen, [The Render Pipeline Shaders SDK](https://gpuopen.com/download/Introducing_RenderPipelineShaders_SDK.pdf), AMD, December 2022
+8. Daxa, [task heads](https://docs.daxa.dev/wiki/taskgraph-bottom-up/) and the [macro definitions](https://github.com/Ipotrick/Daxa/blob/master/include/daxa/utils/task_graph.inl)
